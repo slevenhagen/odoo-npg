@@ -644,7 +644,7 @@
             <field name="name">mrp.production.gantt</field>
             <field name="model">mrp.production</field>
             <field name="arch" type="xml">
-                <gantt date_stop="date_finished" date_start="date_start" progress="progress" string="Productions" default_group_by="routing_id">
+                <gantt  date_start="date_start" date_stop="date_finished" progress="progress" string="Productions" default_group_by="routing_id">
                 </gantt>
             </field>
         </record>
@@ -699,6 +699,9 @@
                                 <field name="product_uos" class="oe_inline"/>
                             </div>
                             <field name="date_planned"/>
+                            <field name="priority"/>
+                            <field name="date_start" readonly="1"/>
+                            <field name="date_finished" readonly="1"/>
                         </group>
                         <group>
                             <field name="bom_id"
@@ -716,6 +719,14 @@
                             <field name="location_src_id" domain="[('usage','=','internal')]" on_change="location_id_change(location_src_id,location_dest_id)"/>
                             <field name="location_dest_id" domain="[('usage','=','internal')]"/>
                         </group>
+                        <group>
+	                        <button name="action_compute" states="draft"
+		                        string="Load BOM and Routing" type="object"
+		                        icon="terp-stock_format-scientific"/>
+		                    <button name="action_plan" states="draft"
+		                        string="Update Work Orders Plan" type="object"
+		                        icon="terp-stock_format-scientific"/>
+	                    </group>
                     </group>
                     <notebook>
                         <page string="Consumed Products">
@@ -784,9 +795,7 @@
                             </group>
                         </page>
                         <page string="Work Orders" groups="mrp.group_mrp_routings">
-                            <button name="action_compute" states="draft"
-                                string="Compute Data" type="object"
-                                icon="terp-stock_format-scientific"/>
+
                             <field name="workcenter_lines" options="{'reload_on_button': true}">
                                 <form string="Production Work Centers">
                                     <group col="4">
@@ -807,18 +816,11 @@
                             </field>
                         </page>
                         <page string="Scheduled Products">
-                            <button name="action_compute" states="draft"
-                                string="Compute Data" type="object"
-                                icon="terp-stock_format-scientific"/>
                             <field name="product_lines"/>
                         </page>
                         <page string="Extra Information">
                             <group>
-                                <group>
-                                    <field name="priority"/>
-                                    <field name="date_start" invisible="1"/>
-                                    <field name="date_finished" invisible="1"/>
-                                </group>
+
                                 <group>
                                     <field name="company_id" groups="base.group_multi_company" widget="selection" />                                     
                                     <field name="move_prod_id" groups="stock.group_locations"/>
@@ -844,7 +846,7 @@
                     <filter icon="terp-gtk-media-pause" string="Pending" name="pending" domain="[('state','=','confirmed')]"
                         help="Manufacturing Orders which are waiting for raw materials."/>
                     <filter icon="terp-camera_test" string="Ready" name="ready" domain="[('state','=','ready')]"
-                        help="Manufacturing Orders which are ready to start production."/>
+                        help="Manufacturing Orders which are ready minute=0,to start production."/>
                     <filter icon="terp-check" string="In Production" name="inprogress" domain="[('state','=','in_production')]"
                         help="Manufacturing Orders which are currently in production."/>
                     <separator/>

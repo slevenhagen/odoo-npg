@@ -393,7 +393,7 @@ class resource_calendar(osv.osv):
 
     def _schedule_hours(self, cr, uid, id, hours, day_dt=None,
                         compute_leaves=False, resource_id=None,
-                        default_interval=None, context=None):
+                        default_interval=None, capacity=1, context=None):
         """ Schedule hours of work, using a calendar and an optional resource to
         compute working and leave days. This method can be used backwards, i.e.
         scheduling days before a deadline.
@@ -416,6 +416,8 @@ class resource_calendar(osv.osv):
                                        Example: default_interval = (8, 16).
                                        Otherwise, a void list of working intervals
                                        is returned when id is None.
+        :param int capacity: if set allows to multiply hours in interval times
+                                    parallel capacity id planning for work centers
 
         :return tuple (datetime, intervals): datetime is the beginning/ending date
                                              of the schedulign; intervals are the
@@ -600,7 +602,7 @@ class resource_calendar(osv.osv):
         for dt_str, hours, calendar_id in date_and_hours_by_cal:
             result = self.schedule_hours(
                 cr, uid, calendar_id, hours,
-                day_dt=datetime.datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S').replace(minute=0, second=0),
+                day_dt=datetime.datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S').replace( second=0),
                 compute_leaves=True, resource_id=resource,
                 default_interval=(8, 16)
             )

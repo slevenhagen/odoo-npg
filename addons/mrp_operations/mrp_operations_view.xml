@@ -18,6 +18,12 @@
                     <field name="state" widget="statusbar"/>
                 </header>
             </xpath>
+            <xpath expr="//field[@name='workcenter_lines']/form//field[@name='hour']" position="after">
+     	          <group string="Planned Date">
+                     <field name="date_planned"/>
+                     <field name="date_planned_end"/>
+                 </group>
+            </xpath>
         </field>
     </record>
 
@@ -156,7 +162,7 @@
         <field name="name">mrp.production.workcenter.line.gantt</field>
         <field name="model">mrp.production.workcenter.line</field>
         <field name="arch" type="xml">
-            <gantt date_delay="hour" date_start="date_planned" string="Operations" default_group_by="production_id">
+            <gantt date_start="date_planned" date_stop="date_planned_end"  string="Operations" default_group_by="production_id">
             </gantt>
         </field>
     </record>

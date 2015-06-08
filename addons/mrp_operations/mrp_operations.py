@@ -53,7 +53,7 @@ class mrp_production_workcenter_line(osv.osv):
         for op in ops:
             res[op.id] = False
             if op.date_planned:
-                i = intervals.get((op.date_planned, op.hour, op.workcenter_id.calendar_id.id))
+                i = intervals.get((op.date_planned, op.hour, op.workcenter_id.calendar_id.id), op.workcenter_id.resource_id.id)
                 if i:
                     res[op.id] = i[-1][1].strftime('%Y-%m-%d %H:%M:%S')
                 else:
@@ -243,41 +243,67 @@ class mrp_production(osv.osv):
         @return: Calculated date
         """
         dt_end = datetime.now()
+        dt_start = None
+        cur_seq_start = None
+        cur_seq = None
+        
         if context is None:
             context = {}
         for po in self.browse(cr, uid, ids, context=context):
-            dt_end = datetime.strptime(po.date_planned, '%Y-%m-%d %H:%M:%S')
-            if not po.date_start:
-                self.write(cr, uid, [po.id], {
-                    'date_start': po.date_planned
-                }, context=context, update=False)
-            old = None
+                         
             for wci in range(len(po.workcenter_lines)):
                 wc  = po.workcenter_lines[wci]
-                if (old is None) or (wc.sequence>old):
-                    dt = dt_end
+                
+                # On first pass set Start Date for the first Sequence of WO lines to scheduled start or current time
+                if (cur_seq is None):
+                    cur_seq_start = max(datetime.strptime(po.date_planned, '%Y-%m-%d %H:%M:%S'),datetime.now())
+                    cur_seq = wc.sequence
+                # When starting a new  WO Line Sequence set the start Date for current Sequence  
+                # Each time the Sequence increments the new Start for this sequence of Work order lines
+                # becomes the greatest of end times of the previous sequence of work order lines    
+                if cur_seq < wc.sequence:
+                    cur_seq = wc.sequence
+                    cur_seq_start = dt_end
+                if cur_seq > wc.sequence:
+                    raise osv.except_osv(_('Error!'), _("Sequence order error."))
+                    
                 if context.get('__last_update'):
                     del context['__last_update']
-                if (wc.date_planned < dt.strftime('%Y-%m-%d %H:%M:%S')) or mini:
+                    
+                i = self.pool.get('resource.calendar').interval_get(
+                    cr,
+                    uid,
+                    #passing False makes resource_resource._schedule_hours run 1000 iterations doing nothing
+                    wc.workcenter_id.calendar_id and wc.workcenter_id.calendar_id.id or None,
+                    cur_seq_start,
+                    wc.hour or 0.0,
+                    wc.workcenter_id.resource_id.id or None
+                )
+                
+                
+                if i:
+                    dt_end = max(dt_end, i[-1][1])
+                    if not dt_start: 
+                        dt_start = i[0][0]
+                    else:
+                        dt_start = min(dt_start,i[0][0])
+                
                     self.pool.get('mrp.production.workcenter.line').write(cr, uid, [wc.id],  {
-                        'date_planned': dt.strftime('%Y-%m-%d %H:%M:%S')
-                    }, context=context, update=False)
-                    i = self.pool.get('resource.calendar').interval_get(
-                        cr,
-                        uid,
-                        #passing False makes resource_resource._schedule_hours run 1000 iterations doing nothing
-                        wc.workcenter_id.calendar_id and wc.workcenter_id.calendar_id.id or None,
-                        dt,
-                        wc.hour or 0.0
-                    )
-                    if i:
-                        dt_end = max(dt_end, i[-1][1])
+                        'date_planned': i[0][0].strftime('%Y-%m-%d %H:%M:%S'),
+                        'date_planned_end': i[-1][1].strftime('%Y-%m-%d %H:%M:%S')
+                        }, context=context, update=False)
                 else:
-                    dt_end = datetime.strptime(wc.date_planned_end, '%Y-%m-%d %H:%M:%S')
-
-                old = wc.sequence or 0
+                    self.pool.get('mrp.production.workcenter.line').write(cr, uid, [wc.id],  {
+                        'date_planned': po.date_planned,
+                        'date_planned_end':None,
+                        }, context=context, update=False)
+                        
+            if not dt_end:
+                dt_end = datetime.strptime(po.date_planned, '%Y-%m-%d %H:%M:%S')
+            if not dt_start:
+                dt_start = datetime.strptime(po.date_planned, '%Y-%m-%d %H:%M:%S')
             super(mrp_production, self).write(cr, uid, [po.id], {
-                'date_finished': dt_end
+                'date_finished': dt_end, 'date_start': dt_start,
             })
         return dt_end
 
@@ -357,7 +383,10 @@ class mrp_production(osv.osv):
         result = super(mrp_production, self).action_compute(cr, uid, ids, properties=properties, context=context)
         self._compute_planned_workcenter(cr, uid, ids, context=context)
         return result
-
+    
+    def action_plan(self, cr, uid, ids, properties=None, context=None):
+        self._compute_planned_workcenter(cr, uid, ids, context=context)
+        return
 
 class mrp_operations_operation_code(osv.osv):
     _name="mrp_operations.operation.code"

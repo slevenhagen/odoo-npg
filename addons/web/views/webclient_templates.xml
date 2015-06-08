@@ -4,6 +4,7 @@
 <openerp>
     <data>
         <template id="web.assets_common">
+			<script type="text/javascript" src="/web/static/lib/moment/moment.js"></script>
             <script type="text/javascript" src="/web/static/lib/es5-shim/es5-shim.min.js"></script>
             <script type="text/javascript" src="/web/static/lib/underscore/underscore.js"></script>
             <script type="text/javascript" src="/web/static/lib/underscore.string/lib/underscore.string.js"></script>
