@@ -105,8 +105,8 @@
                 <tree string="Working Time" editable="top">
                     <field name="name"/>
                     <field name="dayofweek"/>
-                    <field name="hour_from" widget="float_time"/>
-                    <field name="hour_to" widget="float_time"/>
+                    <field name="hour_from" widget="time"/>
+                    <field name="hour_to" widget="time"/>
                     <field name="date_from"/>
                 </tree>
             </field>
@@ -122,8 +122,8 @@
                         <field name="date_from"/>
                         <label for="hour_from" string="Hours"/>
                         <div>
-                            <field name="hour_from" widget="float_time" class="oe_inline"/> - 
-                            <field name="hour_to" widget="float_time" class="oe_inline"/>
+                            <field name="hour_from" widget="time" class="oe_inline"/> - 
+                            <field name="hour_to" widget="time" class="oe_inline"/>
                         </div>
                     </group>
                 </form>
