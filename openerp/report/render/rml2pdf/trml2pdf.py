@@ -725,14 +725,18 @@ class _rml_flowable(object):
                 data2.append('')
             data.append( data2 )
             posy += 1
-
-        if node.get('colWidths'):
-            assert length == len(node.get('colWidths').split(','))
-            colwidths = [utils.unit_get(f.strip()) for f in node.get('colWidths').split(',')]
-        if node.get('rowHeights'):
-            rowheights = [utils.unit_get(f.strip()) for f in node.get('rowHeights').split(',')]
-            if len(rowheights) == 1:
-                rowheights = rowheights[0]
+        try:
+            if node.get('colWidths'):
+                assert length == len(node.get('colWidths').split(','))
+                colwidths = [utils.unit_get(f.strip()) for f in node.get('colWidths').split(',')]
+            if node.get('rowHeights'):
+                rowheights = [utils.unit_get(f.strip()) for f in node.get('rowHeights').split(',')]
+                if len(rowheights) == 1:
+                    rowheights = rowheights[0]
+        except:
+            tmp = node.get('colWidths')
+            print tmp
+            
         table = platypus.LongTable(data = data, colWidths=colwidths, rowHeights=rowheights, **(utils.attr_get(node, ['splitByRow'] ,{'repeatRows':'int','repeatCols':'int'})))
         if node.get('style'):
             table.setStyle(self.styles.table_styles[node.get('style')])

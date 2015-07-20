@@ -21,8 +21,8 @@ instance.web_gantt.GanttView = instance.web.View.extend({
         gantt.config.scale_offset_minimal = false;
         gantt.config.open_tree_initially = true;
         gantt.config.round_dnd_dates = false;
-        gantt.config.drag_links = false,
-        gantt.config.drag_progress = false,
+        gantt.config.drag_links = true;
+        gantt.config.drag_progress = false;
         gantt.config.grid_width = 200;
         gantt.config.row_height = 25;
         gantt.config.duration_unit = "hour";
@@ -151,7 +151,7 @@ instance.web_gantt.GanttView = instance.web.View.extend({
         var normalize_format = instance.web.normalize_format(_t.database.parameters.date_format);
         gantt.templates.tooltip_text = function(start, end, task) {
             var duration = task.duration / 3;
-            if(duration < 1) duration = 1;
+            //if(duration < 1) duration = 1;
             return "<b><u>" + task.text + "</u></b><br/><b>" + _t("Start date") + ":</b> " +
                 _t(moment(start).format(normalize_format)) + "<br/><b>" +
                 _t("End date") + ":</b> " + _t(moment(end).format(normalize_format)) +
@@ -269,7 +269,7 @@ instance.web_gantt.GanttView = instance.web.View.extend({
             if(gantt.hasChild(id)) return false;
             return true;
         });
-        gantt.attachEvent("onTaskDrag", function(id){
+        gantt.attachEvent("onTaskDrag", function(id,mode, task, original){
             // Refresh parent when children are resize
             var start_date, stop_date;
             var parent = gantt.getTask(gantt.getTask(id).parent);
@@ -284,9 +284,25 @@ instance.web_gantt.GanttView = instance.web.View.extend({
             parent.start_date = start_date;
             parent.end_date = stop_date;
             gantt.updateTask(parent.id);
+            var modes = gantt.config.drag_mode;
+            if(mode == modes.move){
+                var diff = task.start_date - original.start_date;
+                gantt.eachTask(function(child){
+                    child.start_date = new Date(+child.start_date + diff);
+                    child.end_date = new Date(+child.end_date + diff);
+                    gantt.refreshTask(child.id, true);
+                },id )
+            }
         });
-        gantt.attachEvent("onAfterTaskDrag", function(id){
+        gantt.attachEvent("onAfterTaskDrag", function(id, mode, e){
             self.on_task_changed(gantt.getTask(id));
+            var modes = gantt.config.drag_mode;
+            if(mode == modes.move ){
+                gantt.eachTask(function(child){
+                    gantt.roundTaskDates(child);
+                    gantt.refreshTask(child.id, true);
+                },id );
+            }
         });
         if (this.is_action_enabled('create')) {
             this.$el.find(".oe_gantt_button_create").click(this.on_task_create);
